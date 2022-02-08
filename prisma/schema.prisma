@@ -1,0 +1,23 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://admin:admin@localhost:5432" 
+}
+
+model Torcedor{
+  
+      id Int @id @default(autoincrement())
+      status Boolean @default(false)
+      name String
+      cpf String
+      idade Int 
+      sexo String
+      socio_torcedor Boolean @default(false)
+      faixa_etaria String  
+} 
