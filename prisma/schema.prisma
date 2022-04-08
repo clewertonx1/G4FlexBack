@@ -13,11 +13,15 @@ datasource db {
 model Torcedor{
   
       id Int @id @default(autoincrement())
-      status Boolean @default(false)
       name String
       cpf String
       idade Int 
       sexo String
       socio_torcedor Boolean @default(false)
-      faixa_etaria String  
+      premium_torcedor Boolean @default(false)
+      faixa_etaria String
+      id_socio String
+      time_of_hearth String[]
 } 
+
+

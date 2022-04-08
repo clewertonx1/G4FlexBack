@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(allRoutes);
 
 app.get("/g4", (req,res) => {
-    return res.json("kill confirm");
+    return res.json("up");
 });
 
 app.listen(3333, () => console.log("server up in 3333")); 

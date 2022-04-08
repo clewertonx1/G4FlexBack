@@ -1,45 +1,94 @@
-const express = require("express"); //importar o express
-const res = require("express/lib/response");
-
-const allCrud = [{ id: "", status: "false", name:"",cpf:"",
-idade:"",sexo:"",socio_torcedor:"false",faixa_etaria:"" }]; // Setando allCrud com os valores
+const express = require("express"); 
 
 const { PrismaClient } = require("@prisma/client");
+const { request } = require("express");
 const { response } = require("express");
 
 const prisma = new PrismaClient();
 
-const allRoutes = express.Router() // setando um valor de express.router ao uma const
+const allRoutes = express.Router() 
 
 
-//Create
+
+function generateKey() {
+    return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 10)
+}
+
+
+allRoutes.get("/:time/CountOfHearth", async (request, response) => {
+    let { time } = request.params;
+    console.log(time)
+    const result = await prisma.$queryRaw`SELECT
+    (SELECT COUNT(*) FROM "public"."Torcedor" WHERE time_of_hearth[1] = ${time}) AS timeColuna1,
+    (SELECT COUNT(*) FROM "public"."Torcedor" WHERE time_of_hearth[2] = ${time}) AS timeColuna2,
+    (Select Count(*) From "Torcedor" where time_of_hearth[1] = ${time} and time_of_hearth [2] = ${time} ) as Coluna1e2,
+    (select Count(*) from "Torcedor" where ${time} = any(time_of_hearth) ) as ambasColuna `
+    
+    response.json(result)  
+}) 
+
+const limitOfTeams = 2
+
 allRoutes.post("/torcedores", async (request, response) => {
-    const { id,status,name,cpf,idade,sexo,socio_torcedor,faixa_etaria } = request.body;
-    const torcedor = await prisma.torcedor.create({
+    const {name,cpf,idade,sexo,socio_torcedor,premium_torcedor,time_of_hearth} = request.body;
+    console.log(request.body)
+    
+    if(time_of_hearth.length > limitOfTeams){
+        return response.status(400).json("Limite de Times Excedido")
+    }
+    console.log(socio_torcedor)
+
+    const intIdade = parseInt(idade);
+    
+   
+
+    const key = socio_torcedor ? generateKey() : "";
+
+    let faixa_etaria = "";
+
+    if(idade >= 0 && idade <= 11){
+        faixa_etaria = "Criança"
+    };
+
+    if(idade >= 12 && idade <= 17){
+        faixa_etaria = "Adolescente"
+    };
+    if(idade >= 18 && idade <= 59){
+        faixa_etaria = "Adulto"
+    };
+    if(idade >= 60 ){
+        faixa_etaria = "Idoso"
+    };
+  
+    const torcedor = await prisma.torcedor.create({ 
         data: {
-            id,
-            status: false,
             name,
             cpf,
-            idade,
+            idade:intIdade,
             sexo,
-            socio_torcedor: false,
-            faixa_etaria, 
-        },
+            socio_torcedor: socio_torcedor ? true : false,
+            premium_torcedor: premium_torcedor ? true : false, 
+            faixa_etaria,
+            id_socio: key,
+            time_of_hearth
+        },    
     });
-    //allCrud.push({ name, tipoDecachorro: "viraLata"});
-    return response.status(201).json(allCrud);
+    return response.status(201).json(torcedor);
 });
 
-//Read
+
 allRoutes.get("/torcedores", async (request, response) => {
-    const allCrud = await prisma.torcedor.findMany()
-    return response.status(200).json(allCrud)
+    const torcedores = await prisma.torcedor.findMany({orderBy:{name: "asc"}})
+    return response.status(200).json(torcedores)
 })
 
-//Update
+
+
 allRoutes.put("/torcedores", async (request, response) => {
-    const {id,status,name,cpf,idade,sexo,socio_torcedor,faixa_etaria} = request.body;
+    const {id,name,idade,sexo,socio_torcedor,premium_torcedor,time_of_hearth} = request.body;
+    console.log(socio_torcedor)
+  
+    const intIdade = parseInt(idade);
 
     if(!id){
         return response.status(400).json("Id é obrigatório")
@@ -56,19 +105,19 @@ allRoutes.put("/torcedores", async (request, response) => {
     const torcedorUpdate = await prisma.torcedor.update({
         where: { id, },
         data: {
-            status,
             name,
-            cpf,
-            idade,
+            idade:intIdade,
             sexo,
-            socio_torcedor,
-            faixa_etaria,
-            
+            socio_torcedor: socio_torcedor ? true : false,
+            premium_torcedor: premium_torcedor ? true : false,
+            time_of_hearth
+
         },
     });
 
     return response.status(200).json(torcedorUpdate);
 })
+
 
 allRoutes.delete("/torcedores/:id", async (request, response) =>
 {
@@ -93,5 +142,5 @@ allRoutes.delete("/torcedores/:id", async (request, response) =>
     return response.status(200).send();
 })
 
-module.exports = allRoutes; //exportar as rotas para o server.js
+module.exports = allRoutes; 
 
