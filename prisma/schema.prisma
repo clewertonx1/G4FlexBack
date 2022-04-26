@@ -24,4 +24,13 @@ model Torcedor{
       time_of_hearth String[]
 } 
 
+model Funcionarios{
+
+      id Int @id @default(autoincrement())
+      name String
+      senha String
+      cargo String
+
+}
+
 

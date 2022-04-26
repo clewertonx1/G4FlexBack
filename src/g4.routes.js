@@ -3,6 +3,8 @@ const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const { request } = require("express");
 const { response } = require("express");
+const jwt = require('jsonwebtoken');
+const authMiddleware = require('./auth');
 
 const prisma = new PrismaClient();
 
@@ -27,9 +29,58 @@ allRoutes.get("/:time/CountOfHearth", async (request, response) => {
     response.json(result)  
 }) 
 
+allRoutes.post("/funcionarios", async (request, response) => {
+    const {name,senha,cargo} = request.body;
+
+    const funcionarios = await prisma.funcionarios.create({ 
+        data: {
+            name,
+            senha,
+            cargo,
+        },    
+    });
+    return response.status(201).json(funcionarios);
+});
+
+allRoutes.post("/authenticate", async (request, response) => {
+    const { name,senha,cargo } = request.params;
+    const user = {
+      name,
+      senha,
+      cargo,
+    };
+
+    // const passwordCheck =  compare(senha,user.senha);
+
+    // if (!passwordCheck){
+    //     throw new AppError("name ou senha inválidos")
+    // }
+
+    const token = jwt.sign(user, process.env.SECRET, {
+        expiresIn: 300 
+    })
+    response.status(500).json({message: 'Login inválido!'});
+    return res.json({ auth: true, token: token });
+    });
+
+
+    // if(cargo = "diretor"){
+    //     return response.json({
+    //         // vai user,retornar todos os dados de user
+    //        token: jwt.sign(user, 'DIRETORKEY'), // vai retornar o token PRIVATEKEY para a verificação
+    //      }); 
+    // } 
+    // if(cargo = "administrador"){
+    //     return response.json({
+    //         // vai user,retornar todos os dados de user
+    //        token: jwt.sign(user, 'ADMINISTRADORKEY'), // vai retornar o token PRIVATEKEY para a verificação
+    //      }); 
+    // } 
+    // if(cargo = "vendendor"){
+
 const limitOfTeams = 2
 
-allRoutes.post("/torcedores", async (request, response) => {
+allRoutes.post("/torcedores",authMiddleware, async (request, response) => {
     const {name,cpf,idade,sexo,socio_torcedor,premium_torcedor,time_of_hearth} = request.body;
     console.log(request.body)
     
@@ -84,7 +135,7 @@ allRoutes.get("/torcedores", async (request, response) => {
 
 
 
-allRoutes.put("/torcedores", async (request, response) => {
+allRoutes.put("/torcedores",authMiddleware, async (request, response) => {
     const {id,name,idade,sexo,socio_torcedor,premium_torcedor,time_of_hearth} = request.body;
     console.log(socio_torcedor)
   
@@ -119,7 +170,7 @@ allRoutes.put("/torcedores", async (request, response) => {
 })
 
 
-allRoutes.delete("/torcedores/:id", async (request, response) =>
+allRoutes.delete("/torcedores/:id",authMiddleware, async (request, response) =>
 {
     const { id } = request.params;
 
